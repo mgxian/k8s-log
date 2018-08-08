@@ -4,18 +4,18 @@ metadata:
   name: filebeat-config
 data:
   filebeat.yml: |
-    setup.template.name: "filebeat"
-    setup.template.pattern: "filebeat-k8s-*"
     filebeat.inputs:
     - type: log
-      enabled: true
+      # enabled: true
       paths:
         - "/log/*"
     fields:
       k8s-app: log-contanier-file
     output.elasticsearch:
       hosts: ["elasticsearch-logging.logging:9200"]
-      index: "filebeat-k8s-%{+YYYY.MM.dd}"
+      indices:
+        - index: "filebeat-k8s-%{+YYYY.MM.dd}"
+          default: true
 
 ---
 apiVersion: apps/v1
@@ -47,15 +47,11 @@ spec:
           mountPath: /data/logs
       - name: filebeat-logging
         image: registry.cn-shanghai.aliyuncs.com/k8s-log/filebeat:6.3.2
-        args: [
-          "-c", "/etc/filebeat/filebeat.yml",
-          "-e",
-        ]
         volumeMounts:
         - name: app-logs
           mountPath: /log
         - name: filebeat-config
-          mountPath: /etc/filebeat
+          mountPath: /usr/local/filebeat/config
       volumes:
       - name: app-logs
         emptyDir: {}
