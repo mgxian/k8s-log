@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-go
+  labels:
+    k8s-app: service-go
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: service-go
+  template:
+    metadata:
+      labels:
+        k8s-app: service-go
+    spec:
+      containers:
+      - name: service-go
+        image: registry.cn-shanghai.aliyuncs.com/k8s-log/service-go:v1

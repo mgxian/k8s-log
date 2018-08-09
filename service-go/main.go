@@ -26,7 +26,7 @@ func main() {
 	for {
 		message := fmt.Sprintf("log from service-go %d", count)
 		log := log{Service: "service-go", Message: message, CreatedAt: time.Now()}
-		index := fmt.Sprintf("k8s-app-%4d.%2d.%2d", log.CreatedAt.Year(), log.CreatedAt.Month(), log.CreatedAt.Day())
+		index := fmt.Sprintf("k8s-app-%.4d.%.2d.%.2d", log.CreatedAt.Year(), log.CreatedAt.Month(), log.CreatedAt.Day())
 		resp, err := client.Index().
 			Index(index).
 			Type("log").
