@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logstash-shipper
+  namespace: logging
+  labels:
+    k8s-app: logstash-shipper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: logstash-shipper
+  template:
+    metadata:
+      labels:
+        k8s-app: logstash-shipper
+    spec:
+      containers:
+      - name: logstash-shipper
+        image: logstash
+        ports:
+        - name: shipper
+          containerPort: 7788
+          protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logstash-shipper
+  namespace: logging
+  labels:
+    k8s-app: logstash-shipper
+spec:
+  ports:
+  - name: shipper
+    port: 7788
+    protocol: TCP
+    targetPort: shipper
+  selector:
+    k8s-app: logstash-shipper
