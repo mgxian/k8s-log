@@ -10,8 +10,6 @@ RUN apk add --no-cache wget libc6-compat \
     && rm -rf /var/cache/apk/* filebeat-6.3.2-linux-x86_64.tar.gz
 WORKDIR /usr/local/filebeat
 USER filebeat
-RUN mkdir config \
-    && mv filebeat.yml filebeat.yml.ori \
-    && wget -O config/filebeat.yml https://raw.githubusercontent.com/mgxian/k8s-log/master/filebeat/filebeat.yml
+COPY filebeat.yml config/filebeat.yml
 ENTRYPOINT [ "./filebeat" ]
 CMD [ "-e", "-c", "./config/filebeat.yml" ]
