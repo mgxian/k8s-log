@@ -37,5 +37,6 @@ func main() {
 		}
 		fmt.Printf("Indexed log %s to index %s, type %s\n", resp.Id, resp.Index, resp.Type)
 		time.Sleep(time.Second)
+		count++
 	}
 }
