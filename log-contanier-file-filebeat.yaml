@@ -10,7 +10,7 @@ data:
       paths:
         - "/log/*"
     fields:
-      k8s-app: log-contanier-file
+      k8s-app: log-contanier-file-filebeat
     output.elasticsearch:
       hosts: ["elasticsearch-logging.logging:9200"]
       indices:
@@ -21,27 +21,27 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: log-contanier-file
+  name: log-contanier-file-filebeat
   labels:
-    k8s-app: log-contanier-file
+    k8s-app: log-contanier-file-filebeat
 spec:
   replicas: 1
   selector:
     matchLabels:
-      k8s-app: log-contanier-file
+      k8s-app: log-contanier-file-filebeat
   template:
     metadata:
       labels:
-        k8s-app: log-contanier-file
+        k8s-app: log-contanier-file-filebeat
     spec:
       terminationGracePeriodSeconds: 30
       containers:
-      - name: log-contanier-file
+      - name: log-contanier-file-filebeat
         image: alpine:latest
         command:
         - sh
         - -c
-        - 'count=1;while true;do echo log to file $count>>/data/logs/log-contanier-file.log;sleep 1;count=$(($count+1));done'
+        - 'count=1;while true;do echo log to file $count>>/data/logs/log-contanier-file-filebeat.log;sleep 1;count=$(($count+1));done'
         volumeMounts:
         - name: app-logs
           mountPath: /data/logs

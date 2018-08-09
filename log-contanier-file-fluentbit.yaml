@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentbit-config
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush 5
+        Daemon off
+        Log_Level error
+        Log_File /fluent-bit/log/fluent-bit.log
+
+    [INPUT]
+        Name tail
+        Path /log/*
+        Refresh_Interval 10
+        DB /fluent-bit/fluent-bit.db
+        
+    [FILTER]
+        Name modify
+        Match *
+        Add_if_not_present k8s-app log-contanier-file-fluentbit
+        
+    [OUTPUT]
+        Name es
+        Match *
+        Host elasticsearch-logging.logging
+        Port 9200
+        Logstash_Format On
+        Logstash_Prefix fluentbit-k8s
+        Logstash_DateFormat %Y.%m.%d
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-contanier-file-fluentbit
+  labels:
+    k8s-app: log-contanier-file-fluentbit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: log-contanier-file-fluentbit
+  template:
+    metadata:
+      labels:
+        k8s-app: log-contanier-file-fluentbit
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: log-contanier-file-fluentbit
+        image: alpine:latest
+        command:
+        - sh
+        - -c
+        - 'count=1;while true;do echo log to file $count>>/data/logs/log-contanier-file-fluentbit.log;sleep 1;count=$(($count+1));done'
+        volumeMounts:
+        - name: app-logs
+          mountPath: /data/logs
+      - name: fluentbit-logging
+        image: fluent/fluent-bit:0.13
+        volumeMounts:
+        - name: app-logs
+          mountPath: /log
+        - name: fluentbit-config
+          mountPath: /fluent-bit/etc/
+      volumes:
+      - name: app-logs
+        emptyDir: {}
+      - name: fluentbit-config
+        configMap:
+          name: fluentbit-config
