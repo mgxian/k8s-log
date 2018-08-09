@@ -10,7 +10,7 @@ import (
 
 type log struct {
 	Service   string    `json:"service,omitempty"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
+	Timestamp time.Time `json:"@timestamp,omitempty"`
 	Message   string    `json:"message"`
 }
 
@@ -25,8 +25,8 @@ func main() {
 	count := 1
 	for {
 		message := fmt.Sprintf("log from service-go %d", count)
-		log := log{Service: "service-go", Message: message, CreatedAt: time.Now()}
-		index := fmt.Sprintf("k8s-app-%.4d.%.2d.%.2d", log.CreatedAt.Year(), log.CreatedAt.Month(), log.CreatedAt.Day())
+		log := log{Service: "service-go", Message: message, Timestamp: time.Now()}
+		index := fmt.Sprintf("k8s-app-%.4d.%.2d.%.2d", log.Timestamp.Year(), log.Timestamp.Month(), log.Timestamp.Day())
 		resp, err := client.Index().
 			Index(index).
 			Type("log").
