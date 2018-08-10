@@ -1,5 +1,6 @@
 # setup.template.name: "filebeat"
 # setup.template.pattern: "filebeat-k8s-*"
+logging.level: warning
 filebeat.inputs:
 - type: log
   # enabled: true

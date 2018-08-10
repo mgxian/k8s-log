@@ -21,6 +21,7 @@ metadata:
   name: nginx-log-filebeat-config
 data:
   filebeat.yml: |
+    logging.level: warning
     filebeat.inputs:
     - type: log
       # enabled: true
