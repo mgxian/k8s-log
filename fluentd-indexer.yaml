@@ -14,8 +14,9 @@ data:
     <filter nginx.access>
       @type parser
       key_name message
+      remove_key_name_field false
       <parse>
-      @type nginx
+        @type nginx
       </parse>
     </filter>
 

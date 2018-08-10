@@ -11,7 +11,7 @@ data:
       bind 0.0.0.0
     </source>
 
-    <match pattern>
+    <match **>
       @type forward
       send_timeout 60s
       recover_wait 10s

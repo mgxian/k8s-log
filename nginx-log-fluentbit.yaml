@@ -30,13 +30,15 @@ data:
     [INPUT]
         Name tail
         Path /log/*
+        Key message
+        Tag nginx.access
         Refresh_Interval 10
         DB /fluent-bit/fluent-bit.db
         
     [FILTER]
         Name modify
         Match *
-        Add_if_not_present k8s-app log-contanier-file-fluentbit
+        Add_if_not_present k8s-app nginx-log-fluentbit
         
     [OUTPUT]
         Name forward
