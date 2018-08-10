@@ -1,0 +1,6 @@
+pipeline.workers: 2
+pipeline.batch.size: 125
+pipeline.batch.delay: 50
+# path.config: /usr/local/logstash/config
+# config.string: pipelines.yml
+log.level: error

@@ -1,6 +1,2 @@
-- pipeline.id: my-pipeline_1
-  path.config: "/etc/path/to/p1.config"
-  pipeline.workers: 3
-- pipeline.id: my-other-pipeline
-  path.config: "/etc/different/path/p2.cfg"
-  queue.type: persisted
+- pipeline.id: main
+  path.config: "/usr/local/logstash/config/pipeline/*.conf"
