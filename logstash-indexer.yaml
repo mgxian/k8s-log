@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-indexer-config
+  namespace: logging
+data:
+  logstash-indexer.conf: |
+    input {
+      redis {
+        id => "logging_elk_redis"
+        host => ["logging-redis.logging"]
+        port => 6379
+        data_type => list
+        key => "logstash-logging_elk_redis"
+      }
+    }
+
+    filter {
+      grok {
+        match => { "message" => "%{COMBINEDAPACHELOG}" }
+      }
+      date {
+        match => [ "timestamp" , "dd/MMM/yyyy:HH:mm:ss Z" ]
+      }
+    }
+
+    output {
+      elasticsearch {
+        hosts => ["//elasticsearch-logging.logging"]
+        manage_template => false
+        index => "k8s-logging-elk-%{+YYYY.MM.dd}"
+      }
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logstash-indexer
+  namespace: logging
+  labels:
+    k8s-app: logstash-indexer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: logstash-indexer
+  template:
+    metadata:
+      labels:
+        k8s-app: logstash-indexer
+    spec:
+      containers:
+      - name: logstash-indexer
+        image: registry.cn-shanghai.aliyuncs.com/k8s-log/logstash:6.3.2
+        volumeMounts:
+        - name: logstash-indexer-config
+          mountPath: /usr/local/logstash/config/pipeline
+      volumes:
+      - name: logstash-indexer-config
+        configMap:
+          name: logstash-indexer-config
