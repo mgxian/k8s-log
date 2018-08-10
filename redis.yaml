@@ -17,11 +17,17 @@ spec:
     spec:
       containers:
       - name: logging-redis
-        image: redis
+        image: redis:alpine
         ports:
         - name: redis
           containerPort: 6379
           protocol: TCP
+        readinessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          periodSeconds: 3
 
 ---
 apiVersion: v1

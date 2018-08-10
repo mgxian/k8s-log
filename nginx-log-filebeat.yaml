@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-log-config
+data:
+  default.conf: |
+    server {
+        listen       80;
+        server_name  localhost;
+        access_log  /var/log/nginx/host.access.log  main;
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+    }
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-log-filebeat-config
+data:
+  filebeat.yml: |
+    filebeat.inputs:
+    - type: log
+      # enabled: true
+      paths:
+        - "/log/*"
+    fields:
+      k8s-app: nginx-log-filebeat
+    output.logstash:
+      hosts: ["logstash-shipper.logging:7788"]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-log-filebeat
+  labels:
+    k8s-app: nginx-log-filebeat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: nginx-log-filebeat
+  template:
+    metadata:
+      labels:
+        k8s-app: nginx-log-filebeat
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: nginx-log-filebeat
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: app-logs
+          mountPath: /var/log/nginx
+        - name: nginx-log-config
+          mountPath: /etc/nginx/conf.d/
+      - name: filebeat-logging
+        image: registry.cn-shanghai.aliyuncs.com/k8s-log/filebeat:6.3.2
+        volumeMounts:
+        - name: app-logs
+          mountPath: /log
+        - name: nginx-log-filebeat-config
+          mountPath: /usr/local/filebeat/config
+      volumes:
+      - name: app-logs
+        emptyDir: {}
+      - name: nginx-log-config
+        configMap:
+          name: nginx-log-config
+      - name: nginx-log-filebeat-config
+        configMap:
+          name: nginx-log-filebeat-config
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nginx-log-filebeat
+  labels:
+    k8s-app: nginx-log-filebeat
+spec:
+  selector:
+    k8s-app: nginx-log-filebeat
+  ports:
+    - name: http
+      port: 80
