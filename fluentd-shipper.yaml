@@ -25,7 +25,7 @@ data:
 
       <buffer>
         @type file
-        path /var/log/fluentd-buffers/shipper.system.buffer
+        path /fluentd/log/fluentd-buffers/shipper.system.buffer
         flush_mode interval
         retry_type exponential_backoff
         flush_thread_count 2

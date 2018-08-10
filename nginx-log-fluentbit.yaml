@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-log-config
+data:
+  default.conf: |
+    server {
+        listen       80;
+        server_name  localhost;
+        access_log  /var/log/nginx/host.access.log  main;
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+    }
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-log-fluentbit-config
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush 5
+        Daemon off
+        Log_Level error
+        Log_File /fluent-bit/log/fluent-bit.log
+
+    [INPUT]
+        Name tail
+        Path /log/*
+        Refresh_Interval 10
+        DB /fluent-bit/fluent-bit.db
+        
+    [FILTER]
+        Name modify
+        Match *
+        Add_if_not_present k8s-app log-contanier-file-fluentbit
+        
+    [OUTPUT]
+        Name forward
+        Match *
+        Host fluentd-shipper.logging
+        Port 24224
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-log-fluentbit
+  labels:
+    k8s-app: nginx-log-fluentbit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: nginx-log-fluentbit
+  template:
+    metadata:
+      labels:
+        k8s-app: nginx-log-fluentbit
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: nginx-log-fluentbit
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: app-logs
+          mountPath: /var/log/nginx
+        - name: nginx-log-config
+          mountPath: /etc/nginx/conf.d/
+      - name: fluentbit-logging
+        image: fluent/fluent-bit:0.13
+        volumeMounts:
+        - name: app-logs
+          mountPath: /log
+        - name: nginx-log-fluentbit-config
+          mountPath: /fluent-bit/etc/
+      volumes:
+      - name: app-logs
+        emptyDir: {}
+      - name: nginx-log-config
+        configMap:
+          name: nginx-log-config
+      - name: nginx-log-fluentbit-config
+        configMap:
+          name: nginx-log-fluentbit-config
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: nginx-log-fluentbit
+  labels:
+    k8s-app: nginx-log-fluentbit
+spec:
+  selector:
+    k8s-app: nginx-log-fluentbit
+  ports:
+    - name: http
+      port: 80
