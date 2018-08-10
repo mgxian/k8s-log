@@ -59,6 +59,7 @@ spec:
       containers:
       - name: fluentd-shipper
         image: registry.cn-shanghai.aliyuncs.com/k8s-log/fluentd:v1.2-debian
+        imagePullPolicy: Always
         env:
         - name: FLUENTD_CONF
           value: "fluentd-shipper.conf"
