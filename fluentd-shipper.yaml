@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-shipper-config
+  namespace: logging
+data:
+  fluentd-shipper.conf: |
+    <source>
+      @type forward
+      port 24224
+      bind 0.0.0.0
+    </source>
+
+    <match pattern>
+      @type forward
+      send_timeout 60s
+      recover_wait 10s
+      hard_timeout 60s
+
+      <server>
+        name fluentd-indexer
+        host fluentd-indexer.logging
+        port 24224
+      </server>
+
+      <buffer>
+        @type file
+        path /var/log/fluentd-buffers/shipper.system.buffer
+        flush_mode interval
+        retry_type exponential_backoff
+        flush_thread_count 2
+        flush_interval 5s
+        retry_forever
+        retry_max_interval 30
+        chunk_limit_size 2M
+        queue_limit_length 8
+        overflow_action block
+      </buffer>
+    </match>
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fluentd-shipper
+  namespace: logging
+  labels:
+    k8s-app: fluentd-shipper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: fluentd-shipper
+  template:
+    metadata:
+      labels:
+        k8s-app: fluentd-shipper
+    spec:
+      containers:
+      - name: fluentd-shipper
+        image: registry.cn-shanghai.aliyuncs.com/k8s-log/fluentd:v1.2-debian
+        env:
+        - name: FLUENTD_CONF
+          value: "fluentd-shipper.conf"
+        ports:
+        - name: shipper
+          containerPort: 24224
+          protocol: TCP
+        readinessProbe:
+          tcpSocket:
+            port: 24224
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          periodSeconds: 3
+        volumeMounts:
+        - name: fluentd-shipper-config
+          mountPath: /fluentd/etc/
+      volumes:
+      - name: fluentd-shipper-config
+        configMap:
+          name: fluentd-shipper-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fluentd-shipper
+  namespace: logging
+  labels:
+    k8s-app: fluentd-shipper
+spec:
+  ports:
+  - name: shipper
+    port: 24224
+    protocol: TCP
+    targetPort: shipper
+  selector:
+    k8s-app: fluentd-shipper

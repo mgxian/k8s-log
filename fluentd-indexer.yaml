@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-indexer-config
+  namespace: logging
+data:
+  fluentd-indexer.conf: |
+    <source>
+      @type forward
+      port 24224
+      bind 0.0.0.0
+    </source>
+  
+    <filter nginx.access>
+      @type parser
+      key_name message
+      <parse>
+      @type nginx
+      </parse>
+    </filter>
+
+    <match nginx.access>
+      @id elasticsearch
+      @type elasticsearch
+      @log_level info
+      include_tag_key true
+      host elasticsearch-logging.logging
+      port 9200
+      logstash_format true
+      logstash_prefix k8s-logging-efk
+      logstash_dateformat %Y.%m.%d
+      <buffer>
+        @type file
+        path /var/log/fluentd-buffers/indexer.system.buffer
+        flush_mode interval
+        retry_type exponential_backoff
+        flush_thread_count 2
+        flush_interval 5s
+        retry_forever
+        retry_max_interval 30
+        chunk_limit_size 2M
+        queue_limit_length 8
+        overflow_action block
+      </buffer>
+    </match>
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fluentd-indexer
+  namespace: logging
+  labels:
+    k8s-app: fluentd-indexer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: fluentd-indexer
+  template:
+    metadata:
+      labels:
+        k8s-app: fluentd-indexer
+    spec:
+      containers:
+      - name: fluentd-indexer
+        image: registry.cn-shanghai.aliyuncs.com/k8s-log/fluentd:v1.2-debian
+        env:
+        - name: FLUENTD_CONF
+          value: "fluentd-indexer.conf"
+        ports:
+        - name: indexer
+          containerPort: 24224
+          protocol: TCP
+        readinessProbe:
+          tcpSocket:
+            port: 24224
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          periodSeconds: 3
+        volumeMounts:
+        - name: fluentd-indexer-config
+          mountPath: /fluentd/etc/
+      volumes:
+      - name: fluentd-indexer-config
+        configMap:
+          name: fluentd-indexer-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fluentd-indexer
+  namespace: logging
+  labels:
+    k8s-app: fluentd-indexer
+spec:
+  ports:
+  - name: indexer
+    port: 24224
+    protocol: TCP
+    targetPort: indexer
+  selector:
+    k8s-app: fluentd-indexer
