@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-load-gen
+  labels:
+    k8s-app: web-load-gen
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: web-load-gen
+  template:
+    metadata:
+      labels:
+        k8s-app: web-load-gen
+    spec:
+      containers:
+      - name: web-load-gen
+        image: registry.cn-shanghai.aliyuncs.com/k8s-log/web-load-gen:v1
+        # imagePullPolicy: Always
+        env:
+        - name: ROOT_URL
+          value: "http://nginx-log-fluentbit"
+        - name: INTERVAL
+          value: "0.5"

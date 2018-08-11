@@ -17,4 +17,4 @@ spec:
       containers:
       - name: service-go
         image: registry.cn-shanghai.aliyuncs.com/k8s-log/service-go:v1
-        imagePullPolicy: Always
+        # imagePullPolicy: Always

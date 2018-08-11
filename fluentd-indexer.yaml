@@ -66,7 +66,7 @@ spec:
       containers:
       - name: fluentd-indexer
         image: registry.cn-shanghai.aliyuncs.com/k8s-log/fluentd:v1.2-debian
-        imagePullPolicy: Always
+        # imagePullPolicy: Always
         env:
         - name: FLUENTD_CONF
           value: "fluentd-indexer.conf"
