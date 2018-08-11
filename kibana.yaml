@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: kibana-logging
-        image: registry.cn-shanghai.aliyuncs.com/k8s-log/kiban:6.2.4
+        image: registry.cn-shanghai.aliyuncs.com/k8s-log/kibana:6.2.4
         resources:
           # need more cpu upon initialization, therefore burstable class
           limits:
